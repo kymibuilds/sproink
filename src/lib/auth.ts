@@ -2,6 +2,7 @@ import { Lucia } from "lucia";
 import { DrizzlePostgreSQLAdapter } from "@lucia-auth/adapter-drizzle";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
+import { cookies } from "next/headers";
 
 const adapter = new DrizzlePostgreSQLAdapter(db, sessions, users);
 
@@ -18,6 +19,18 @@ export const auth = new Lucia(adapter, {
     };
   },
 });
+
+export async function validateRequest() {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(auth.sessionCookieName)?.value ?? null;
+
+  if (!sessionId) {
+    return { user: null, session: null };
+  }
+
+  const result = await auth.validateSession(sessionId);
+  return result;
+}
 
 declare module "lucia" {
   interface Register {

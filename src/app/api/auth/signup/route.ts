@@ -3,8 +3,26 @@ import bcrypt from "bcrypt";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { rateLimit, getClientIP } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  // Rate limit: 3 signups per hour per IP
+  const ip = getClientIP(req);
+  const { success, remaining, resetIn } = rateLimit(`signup:${ip}`, {
+    maxRequests: 3,
+    windowMs: 3600000, // 1 hour
+  });
+
+  if (!success) {
+    return new NextResponse("Too many signup attempts. Please try again later.", {
+      status: 429,
+      headers: {
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(Math.ceil(resetIn / 1000)),
+      },
+    });
+  }
+
   const { email, username, password } = await req.json();
 
   if (!email || !username || !password) {
@@ -25,6 +43,8 @@ export async function POST(req: Request) {
     status: 201,
     headers: {
       "Set-Cookie": sessionCookie.serialize(),
+      "X-RateLimit-Remaining": String(remaining),
     },
   });
 }
+

@@ -1,6 +1,12 @@
 "use client";
 import { FeatureConfig, ToggleBar } from "./_components/toggle-bar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+type LinkItem = {
+  id: string;
+  name: string;
+  url: string;
+};
 
 export default function MyPage() {
   const [features, setFeatures] = useState<FeatureConfig>({
@@ -10,8 +16,17 @@ export default function MyPage() {
     integrations: true,
   });
 
-  // Mock data
-  const links = ["portfolio", "x", "twitter", "linkedin", "codeforces", "leetcode"];
+  const [links, setLinks] = useState<LinkItem[]>([]);
+
+  // Fetch links on mount
+  useEffect(() => {
+    fetch("/api/links")
+      .then((res) => res.json())
+      .then((data) => setLinks(data))
+      .catch(console.error);
+  }, []);
+
+  // Mock data (blogs & products remain mock for now)
   const blogs = [
     "building a minimal saas with next.js",
     "why text-first uis scale better",
@@ -45,14 +60,16 @@ export default function MyPage() {
         </div>
 
         {/* Links */}
-        {features.links && (
+        {features.links && links.length > 0 && (
           <section className="flex flex-col gap-4 items-center">
             <h2 className="mono text-xs text-muted-foreground">［ links ］</h2>
             <div className="text-center max-w-xs leading-relaxed">
               {links.map((link, i) => (
-                <span key={link}>
+                <span key={link.id}>
                   {i > 0 && <span className="text-muted-foreground mx-2">•</span>}
-                  <a className="hover:underline cursor-pointer">{link}</a>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:underline cursor-pointer">
+                    {link.name}
+                  </a>
                 </span>
               ))}
             </div>

@@ -10,18 +10,33 @@ type LinkItem = {
 };
 
 export default function LinksPage() {
-  const [links, setLinks] = useState<LinkItem[]>([
-    { id: "1", name: "portfolio", url: "https://nyahh.dev", clicks: 1242 },
-    { id: "2", name: "twitter / x", url: "https://x.com/nyahdev", clicks: 854 },
-    { id: "3", name: "github", url: "https://github.com/nyahdev", clicks: 2341 },
-    { id: "4", name: "linkedin", url: "https://linkedin.com/in/nyahdev", clicks: 432 },
-  ]);
-
+  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
 
+  // Fetch links on mount
+  useEffect(() => {
+    fetchLinks();
+  }, []);
+
+  const fetchLinks = async () => {
+    try {
+      const res = await fetch("/api/links");
+      if (res.ok) {
+        const data = await res.json();
+        setLinks(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch links:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Click outside to close
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (formRef.current && !formRef.current.contains(event.target as Node)) {
@@ -39,12 +54,36 @@ export default function LinksPage() {
     };
   }, [isAdding]);
 
-  const handleAdd = () => {
-    if (newName && newUrl) {
-      setLinks([{ id: crypto.randomUUID(), name: newName, url: newUrl, clicks: 0 }, ...links]);
-      setIsAdding(false);
-      setNewName("");
-      setNewUrl("");
+  const handleAdd = async () => {
+    if (!newName || !newUrl) return;
+
+    try {
+      const res = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, url: newUrl }),
+      });
+
+      if (res.ok) {
+        const newLink = await res.json();
+        setLinks([newLink, ...links]);
+        setIsAdding(false);
+        setNewName("");
+        setNewUrl("");
+      }
+    } catch (error) {
+      console.error("Failed to add link:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setLinks(links.filter((link) => link.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete link:", error);
     }
   };
 
@@ -53,6 +92,14 @@ export default function LinksPage() {
       handleAdd();
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-md mx-auto py-16 px-6 flex items-center justify-center">
+        <span className="text-sm text-muted-foreground">loading...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md mx-auto py-16 px-6 flex flex-col gap-8">
@@ -92,12 +139,19 @@ export default function LinksPage() {
                 onKeyDown={handleKeyDown}
               />
             </div>
-            <button 
-                onClick={handleAdd}
-                className="text-xs bg-foreground text-background px-3 py-1 hover:opacity-90 transition-opacity"
+            <button
+              onClick={handleAdd}
+              className="text-xs bg-foreground text-background px-3 py-1 hover:opacity-90 transition-opacity"
             >
-                save
+              save
             </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {links.length === 0 && !isAdding && (
+          <div className="text-sm text-muted-foreground text-center py-8">
+            no links yet. click + add to create one.
           </div>
         )}
 
@@ -115,7 +169,12 @@ export default function LinksPage() {
               <span className="text-[10px] mono text-muted-foreground">{link.clicks} clicks</span>
               <div className="flex gap-3 text-xs opacity-50 group-hover:opacity-100 transition-opacity">
                 <button className="hover:text-foreground text-muted-foreground">edit</button>
-                <button className="hover:text-red-500 text-muted-foreground">del</button>
+                <button
+                  onClick={() => handleDelete(link.id)}
+                  className="hover:text-red-500 text-muted-foreground"
+                >
+                  del
+                </button>
               </div>
             </div>
           </div>
@@ -124,4 +183,5 @@ export default function LinksPage() {
     </div>
   );
 }
+
 
