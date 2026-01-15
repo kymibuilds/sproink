@@ -22,6 +22,9 @@ export default function Navbar() {
 
         {/* Navigation */}
         <nav className="flex flex-col gap-3 text-sm">
+          <Link href="/links" className="hover:underline">
+            links
+          </Link>
           <Link href="/analytics" className="hover:underline">
             analytics
           </Link>

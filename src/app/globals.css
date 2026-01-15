@@ -137,3 +137,8 @@
         var(--border) 4px
     );
 }
+
+::selection {
+    background-color: var(--foreground);
+    color: var(--background);
+}

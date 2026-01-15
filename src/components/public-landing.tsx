@@ -6,9 +6,11 @@ export function PublicLanding() {
     <>
     <CenteredLayout>
       <div className="w-full max-w-md flex flex-col items-center justify-center gap-4 text-center">
-        <h1 className="text-xl font-medium">sproink</h1>
-        <p className="text-sm text-muted-foreground">
-          link in bio for devs
+        <h1 className="text-2xl font-medium">sproink</h1>
+        <p className="text-sm">
+          linktree but better. <br /> <span className="text-xs text-muted-foreground">
+            blogs, sponsors, integrations and everything in between
+          </span>
         </p>
 
         <div className="flex gap-3 text-sm">

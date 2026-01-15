@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+import { ColorPicker } from "./color-picker";
+
 type Feature = "links" | "blogs" | "products" | "integrations";
 
 export type FeatureConfig = Record<Feature, boolean>;
@@ -8,6 +13,8 @@ type Props = {
 };
 
 export function ToggleBar({ value, onChange }: Props) {
+  const [showColors, setShowColors] = useState(false);
+
   const toggle = (key: Feature) => {
     onChange({
       ...value,
@@ -20,7 +27,7 @@ export function ToggleBar({ value, onChange }: Props) {
   const inactive = "text-muted-foreground hover:text-foreground";
 
   return (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex items-center justify-between w-full relative">
       {(Object.keys(value) as Feature[]).map((key) => (
         <button
           key={key}
@@ -31,6 +38,18 @@ export function ToggleBar({ value, onChange }: Props) {
           {key}
         </button>
       ))}
+
+      {/* Colors Button */}
+      <button
+        onClick={() => setShowColors(!showColors)}
+        className={`${base} ${showColors ? active : inactive}`}
+      >
+        colors
+      </button>
+
+      {/* Color Picker Popup */}
+      <ColorPicker isOpen={showColors} onClose={() => setShowColors(false)} />
     </div>
   );
 }
+
