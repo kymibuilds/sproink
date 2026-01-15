@@ -1,5 +1,24 @@
 import React from "react";
 
+function TrackCell({
+  borders,
+  pattern = false,
+  children,
+}: {
+  borders?: string;
+  pattern?: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className={`relative ${borders || ""} bg-background`}>
+      {pattern && (
+        <div className="absolute inset-0 bg-diagonal-stripes opacity-40 pointer-events-none" />
+      )}
+      {children}
+    </div>
+  );
+}
+
 export function CenteredLayout({ children }: { children: React.ReactNode }) {
   // 1fr [track] content [track] 1fr
   const gridCols = "1fr 1.5rem minmax(auto, 400px) 1.5rem 1fr";
@@ -14,69 +33,74 @@ export function CenteredLayout({ children }: { children: React.ReactNode }) {
         gridTemplateRows: gridRows,
       }}
     >
-      {/* ================= Row 1 ================= */}
-      <div /> {/* 1: Left */}
-      <div className="border-x border-border" /> {/* 2: Left Track Vertical Extension */}
-      <div /> {/* 3: Center */}
-      <div className="border-x border-border" /> {/* 4: Right Track Vertical Extension */}
-      <div /> {/* 5: Right */}
+      {/* 
+        Border Strategy:
+        - Vertical Lines are owned by Col 2 (Left/Right) and Col 4 (Left/Right).
+        - Horizontal Lines are owned by Row 2 (Top/Bottom) and Row 4 (Top/Bottom).
+        This avoids double borders at intersections.
+      */}
+
+      {/* ================= Row 1 (Top Ext) ================= */}
+      <div />
+      <TrackCell borders="border-l border-r border-border" /> {/* Vertical Ext */}
+      <div />
+      <TrackCell borders="border-l border-r border-border" /> {/* Vertical Ext */}
+      <div />
 
       {/* ================= Row 2 (Top Tracks) ================= */}
-      {/* 1: Left Extension (Horizontal) - No Stripes */}
-      <div className="border-y border-border" /> 
-      
+      {/* 1: Left Ext (Horizontal) */}
+      <TrackCell borders="border-t border-b border-border" />
+
       {/* 2: Top Left Corner */}
-      <div className="border border-border" />
-      
-      {/* 3: Top Center Track - Has Stripes */}
-      <div className="border-y border-border bg-diagonal-stripes" />
-      
+      <TrackCell borders="border-t border-b border-l border-r border-border" />
+
+      {/* 3: Top Center Track */}
+      <TrackCell borders="border-t border-b border-border" pattern />
+
       {/* 4: Top Right Corner */}
-      <div className="border border-border" />
-      
-      {/* 5: Right Extension (Horizontal) - No Stripes */}
-      <div className="border-y border-border" />
+      <TrackCell borders="border-t border-b border-l border-r border-border" />
+
+      {/* 5: Right Ext (Horizontal) */}
+      <TrackCell borders="border-t border-b border-border" />
 
       {/* ================= Row 3 (Main Content) ================= */}
-      {/* 1: Left Extension Space (Empty) */}
       <div />
-      
-      {/* 2: Left Vertical Track - Has Stripes */}
-      <div className="border-x border-border bg-diagonal-stripes" />
-      
+
+      {/* 2: Left Vertical Track */}
+      <TrackCell borders="border-l border-r border-border" pattern />
+
       {/* 3: Content Area */}
       <div className="flex flex-col items-center justify-center p-8 bg-card/50 backdrop-blur-sm z-10">
         {children}
       </div>
 
-      {/* 4: Right Vertical Track - Has Stripes */}
-      <div className="border-x border-border bg-diagonal-stripes" />
-      
-      {/* 5: Right Extension Space (Empty) */}
+      {/* 4: Right Vertical Track */}
+      <TrackCell borders="border-l border-r border-border" pattern />
+
       <div />
 
       {/* ================= Row 4 (Bottom Tracks) ================= */}
-      {/* 1: Left Extension - No Stripes */}
-      <div className="border-y border-border" />
-      
-      {/* 2: Bottom Left Corner */}
-      <div className="border border-border" />
-      
-      {/* 3: Bottom Center Track - Has Stripes */}
-      <div className="border-y border-border bg-diagonal-stripes" />
-      
-      {/* 4: Bottom Right Corner */}
-      <div className="border border-border" />
-      
-      {/* 5: Right Extension - No Stripes */}
-      <div className="border-y border-border" />
+      {/* 1: Left Ext */}
+      <TrackCell borders="border-t border-b border-border" />
 
-      {/* ================= Row 5 ================= */}
-      <div /> {/* 1 */}
-      <div className="border-x border-border" /> {/* 2: Bottom Left Vertical Extension */}
-      <div /> {/* 3 */}
-      <div className="border-x border-border" /> {/* 4: Bottom Right Vertical Extension */}
-      <div /> {/* 5 */}
+      {/* 2: Bottom Left Corner */}
+      <TrackCell borders="border-t border-b border-l border-r border-border" />
+
+      {/* 3: Bottom Center Track */}
+      <TrackCell borders="border-t border-b border-border" pattern />
+
+      {/* 4: Bottom Right Corner */}
+      <TrackCell borders="border-t border-b border-l border-r border-border" />
+
+      {/* 5: Right Ext */}
+      <TrackCell borders="border-t border-b border-border" />
+
+      {/* ================= Row 5 (Bottom Ext) ================= */}
+      <div />
+      <TrackCell borders="border-l border-r border-border" /> {/* Vertical Ext */}
+      <div />
+      <TrackCell borders="border-l border-r border-border" /> {/* Vertical Ext */}
+      <div />
     </div>
   );
 }
