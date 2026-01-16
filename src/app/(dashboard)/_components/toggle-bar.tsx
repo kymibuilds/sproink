@@ -37,7 +37,8 @@ export function ToggleBar({ value, onChange, linksLayout, onLinksLayoutChange }:
   return (
     <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-between w-full relative">
 
-      <div className="flex flex-wrap gap-2 md:gap-4">
+      <div className="flex flex-wrap gap-2 md:gap-4 items-center">
+        <span className="text-xs font-mono text-muted-foreground mr-1">toggles:</span>
         {(Object.keys(value) as Feature[]).map((key) => (
           <button
             key={key}
