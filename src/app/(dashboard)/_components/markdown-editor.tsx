@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, KeyboardEvent } from "react";
+import { useRef, useCallback, KeyboardEvent, useEffect } from "react";
 
 interface MarkdownEditorProps {
   value: string;
@@ -18,6 +18,36 @@ export function MarkdownEditor({
   minHeight = "300px",
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea on content change (including paste)
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = "auto";
+    // Set height to scrollHeight to fit content
+    textarea.style.height = `${Math.max(textarea.scrollHeight, parseInt(minHeight) || 300)}px`;
+  }, [minHeight]);
+
+  // Adjust height when value changes
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [value, adjustTextareaHeight]);
+
+  // Also listen for input events (handles paste better)
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const handleInput = () => {
+      // Small delay to ensure value is updated after paste
+      requestAnimationFrame(adjustTextareaHeight);
+    };
+
+    textarea.addEventListener("input", handleInput);
+    return () => textarea.removeEventListener("input", handleInput);
+  }, [adjustTextareaHeight]);
 
   const insertFormat = useCallback(
     (type: FormatType) => {

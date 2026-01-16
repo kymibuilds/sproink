@@ -392,7 +392,7 @@ export default function BlogsPage() {
           return (
           <article
             key={blog.id}
-            className={`flex flex-col gap-2 p-3 border bg-card/50 group transition-all relative ${
+            className={`flex flex-col gap-2 p-3 border bg-card/50 group transition-all relative cursor-pointer hover:bg-card/80 ${
               !blog.published ? "opacity-75 border-dashed" : "border-border"
             } ${
               index === focusedIndex && !isPendingDelete
@@ -403,6 +403,7 @@ export default function BlogsPage() {
                 ? "border-red-500 bg-red-500/5" 
                 : ""
             }`}
+            onClick={() => !blog.isExternal && !isPendingDelete && setEditingBlog(blog)}
           >
             {/* Delete Confirmation Overlay */}
             {isPendingDelete && (
@@ -431,9 +432,11 @@ export default function BlogsPage() {
             )}
 
             <div className="flex justify-between items-start">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col items-center text-center flex-1 mr-4">
+                <div className="flex items-center gap-2 justify-center">
                   <span className="font-medium text-sm">{blog.title}</span>
+                  {/* Hover arrow */}
+                  <span className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity text-xs">→</span>
                   {blog.isExternal && (
                     <span className="text-[10px] bg-muted text-muted-foreground px-1 py-0.5 rounded-sm">
                       link
