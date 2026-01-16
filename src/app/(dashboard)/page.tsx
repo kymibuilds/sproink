@@ -237,22 +237,29 @@ export default function MyPage() {
         {features.blogs && publishedBlogs.length > 0 && (
           <section className="flex flex-col gap-4 items-center">
             <h2 className="mono text-xs text-muted-foreground">［ blogs ］</h2>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 items-center w-full">
               {publishedBlogs.map((blog) => {
-                 const isExternal = blog.isExternal;
-                 const href = isExternal ? blog.externalUrl || "#" : `/blog/${blog.slug}`;
-                 const target = isExternal ? "_blank" : undefined;
-                 
-                 return (
-                  <a 
-                    key={blog.id} 
+                const isExternal = blog.isExternal;
+                const href = isExternal
+                  ? blog.externalUrl || "#"
+                  : `/blog/${blog.slug}`;
+                const target = isExternal ? "_blank" : undefined;
+
+                return (
+                  <a
+                    key={blog.id}
                     href={href}
                     target={target}
                     rel={isExternal ? "noopener noreferrer" : undefined}
-                    className="hover:underline cursor-pointer flex items-center gap-1"
+                    className="group flex items-center justify-center gap-1.5 cursor-pointer transition-all w-full relative max-w-xs"
                   >
-                    {blog.title}
-                    {isExternal && <span className="text-[9px] -mt-1">↗</span>}
+                    <span className="text-muted-foreground text-[10px] no-underline flex-shrink-0">•</span>
+                    <span className="group-hover:underline underline-offset-4 decoration-muted-foreground/50 truncate">{blog.title}</span>
+                    {isExternal ? (
+                      <span className="text-[9px] text-muted-foreground -mt-1 no-underline">↗</span>
+                    ) : (
+                      <span className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity text-xs no-underline translate-x-[-4px] group-hover:translate-x-0 duration-200">→</span>
+                    )}
                   </a>
                 );
               })}
