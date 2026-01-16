@@ -21,12 +21,12 @@ export default function UserNotFound() {
         </p>
 
         {/* CTA */}
-        <Link 
-          href="/signup"
+        <a 
+          href="https://plob.dev/signup"
           className="text-xs bg-foreground text-background px-4 py-2 hover:opacity-90 transition-opacity"
         >
           claim this username →
-        </Link>
+        </a>
 
         {/* Footer */}
         <div className="mono text-xs text-muted-foreground pt-6">

@@ -20,6 +20,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "plob",
   description: "linktree, but better",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
