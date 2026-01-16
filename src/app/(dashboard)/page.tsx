@@ -251,10 +251,10 @@ export default function MyPage() {
                     href={href}
                     target={target}
                     rel={isExternal ? "noopener noreferrer" : undefined}
-                    className="group flex items-center justify-center gap-1.5 cursor-pointer transition-all w-full relative max-w-xs"
+                    className="group flex items-start justify-center gap-1.5 cursor-pointer transition-all w-full relative max-w-xs"
                   >
-                    <span className="text-muted-foreground text-[10px] no-underline flex-shrink-0">•</span>
-                    <span className="group-hover:underline underline-offset-4 decoration-muted-foreground/50 truncate">{blog.title}</span>
+                    <span className="text-muted-foreground text-[10px] no-underline flex-shrink-0 mt-0.5">•</span>
+                    <span className="group-hover:underline underline-offset-4 decoration-muted-foreground/50 line-clamp-2 text-center">{blog.title}</span>
                     {isExternal ? (
                       <span className="text-[9px] text-muted-foreground -mt-1 no-underline">↗</span>
                     ) : (
