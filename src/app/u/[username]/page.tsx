@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/db";
-import { users, userSettings, links, blogs, products } from "@/db/schema";
+import { users, userSettings, links, blogs, products, integrations } from "@/db/schema";
 import { eq, asc, desc, and } from "drizzle-orm";
+import { GitHubContributionGraph } from "@/components/github-contribution-graph";
+import type { Activity } from "@/components/kibo-ui/contribution-graph";
 
 type Props = {
   params: Promise<{ username: string }>;
@@ -78,9 +80,82 @@ export default async function PublicProfilePage({ params }: Props) {
   const showLinks = settings?.showLinks ?? true;
   const showBlogs = settings?.showBlogs ?? true;
   const showProducts = settings?.showProducts ?? true;
+  const showIntegrations = settings?.showIntegrations ?? true;
   const linksLayout = settings?.linksLayout ?? "horizontal";
   const bgColor = settings?.bgColor ?? null;
   const textColor = settings?.textColor ?? null;
+
+  // Fetch user integrations
+  const userIntegrations = await db.query.integrations.findFirst({
+    where: eq(integrations.userId, user.id),
+  });
+
+  const githubEnabled = userIntegrations?.githubEnabled ?? false;
+  const githubUsername = userIntegrations?.githubUsername ?? null;
+  const githubToken = userIntegrations?.githubToken ?? null;
+
+  // Fetch GitHub contributions on server if enabled
+  let githubContributions: Activity[] = [];
+  
+  if (showIntegrations && githubEnabled && githubUsername && githubToken) {
+    try {
+      // Use GitHub's GraphQL API to get contribution data
+      const query = `
+        query($username: String!) {
+          user(login: $username) {
+            contributionsCollection {
+              contributionCalendar {
+                totalContributions
+                weeks {
+                  contributionDays {
+                    contributionCount
+                    date
+                    contributionLevel
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+      
+      const response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${githubToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, variables: { username: githubUsername } }),
+        next: { revalidate: 86400 }, // Cache for 24 hours
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const calendar = data?.data?.user?.contributionsCollection?.contributionCalendar;
+        
+        if (calendar?.weeks) {
+          // Flatten weeks into days and map to Activity format
+          const levelMap: Record<string, number> = {
+            'NONE': 0,
+            'FIRST_QUARTILE': 1,
+            'SECOND_QUARTILE': 2,
+            'THIRD_QUARTILE': 3,
+            'FOURTH_QUARTILE': 4,
+          };
+          
+          githubContributions = calendar.weeks.flatMap((week: { contributionDays: Array<{ date: string; contributionCount: number; contributionLevel: string }> }) =>
+            week.contributionDays.map((day) => ({
+              date: day.date,
+              count: day.contributionCount,
+              level: levelMap[day.contributionLevel] ?? 0,
+            }))
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch GitHub contributions:", error);
+    }
+  }
 
   // Fetch content based on settings
   const [userLinks, userBlogs, userProducts] = await Promise.all([
@@ -134,6 +209,11 @@ export default async function PublicProfilePage({ params }: Props) {
             <p className="text-muted-foreground text-xs max-w-xs">{user.bio}</p>
           )}
         </div>
+
+        {/* GitHub Contributions - under username */}
+        {showIntegrations && githubEnabled && githubContributions.length > 0 && (
+          <GitHubContributionGraph data={githubContributions} />
+        )}
 
         {/* Divider */}
         <div className="mono text-xs text-muted-foreground">
@@ -252,6 +332,7 @@ export default async function PublicProfilePage({ params }: Props) {
             </div>
           </section>
         )}
+
 
         {/* Footer */}
         <div className="mono text-xs text-muted-foreground pt-6">

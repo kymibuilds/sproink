@@ -2,6 +2,8 @@
 import { FeatureConfig, LinksLayout, ToggleBar } from "./_components/toggle-bar";
 import { DashboardSkeleton } from "./_components/dashboard-skeleton";
 import { useState, useEffect } from "react";
+import { GitHubContributionGraph } from "@/components/github-contribution-graph";
+import type { Activity } from "@/components/kibo-ui/contribution-graph";
 
 type LinkItem = {
   id: string;
@@ -45,6 +47,7 @@ export default function MyPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [githubContributions, setGithubContributions] = useState<Activity[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,7 +63,8 @@ export default function MyPage() {
               if (data.username) {
                 setUser({ username: data.username, bio: data.bio || null });
               }
-            }),
+            })
+            .catch(() => {}),
 
           // Fetch visibility settings
           fetch("/api/settings")
@@ -74,20 +78,39 @@ export default function MyPage() {
               });
               setLinksLayout(data.linksLayout ?? "horizontal");
               setSettingsLoaded(true);
-            }),
+            })
+            .catch(() => setSettingsLoaded(true)),
 
           // Fetch content
           fetch("/api/links")
             .then((res) => res.json())
-            .then((data) => setLinks(data)),
+            .then((data) => setLinks(data))
+            .catch(() => {}),
 
           fetch("/api/products")
             .then((res) => res.json())
-            .then((data) => setProducts(data)),
+            .then((data) => setProducts(data))
+            .catch(() => {}),
 
           fetch("/api/blogs")
             .then((res) => res.json())
-            .then((data) => setBlogs(data)),
+            .then((data) => setBlogs(data))
+            .catch(() => {}),
+
+          // Fetch GitHub contributions (via our proxy API)
+          fetch("/api/integrations/github")
+            .then((res) => {
+              if (res.ok) return res.json();
+              return { contributions: [] };
+            })
+            .then((data) => {
+              if (data.contributions) {
+                setGithubContributions(data.contributions);
+              }
+            })
+            .catch(() => {
+              // Silently fail - GitHub integration is optional
+            }),
         ]);
       } catch (error) {
         console.error("Failed to load data:", error);
@@ -166,6 +189,11 @@ export default function MyPage() {
             <p className="text-muted-foreground text-xs max-w-xs">{user.bio}</p>
           )}
         </div>
+
+        {/* GitHub Contributions */}
+        {features.integrations && githubContributions.length > 0 && (
+          <GitHubContributionGraph data={githubContributions} />
+        )}
 
         {/* Divider */}
         <div className="mono text-xs text-muted-foreground">

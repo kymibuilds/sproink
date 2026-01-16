@@ -74,6 +74,12 @@ export const blogs = pgTable("blogs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-
-
-
+// User integrations (GitHub, etc.)
+export const integrations = pgTable("integrations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  githubUsername: text("github_username"),
+  githubToken: text("github_token"), // GitHub Personal Access Token
+  githubEnabled: boolean("github_enabled").default(false).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
