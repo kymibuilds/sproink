@@ -24,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${user.username} | plob.dev`;
   const description = user.bio || `Check out ${user.username}'s links, blogs, and more on plob.dev`;
+  const ogImage = `https://plob.dev/api/og/${user.username}`;
 
   return {
     title,
@@ -34,11 +35,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `https://${user.username}.plob.dev`,
       siteName: "plob.dev",
       type: "profile",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${user.username}'s profile on plob.dev`,
+        },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
+      images: [ogImage],
     },
   };
 }
