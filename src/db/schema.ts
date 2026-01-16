@@ -25,6 +25,8 @@ export const userSettings = pgTable("user_settings", {
   showProducts: boolean("show_products").default(true).notNull(),
   showIntegrations: boolean("show_integrations").default(true).notNull(),
   linksLayout: text("links_layout").default("horizontal").notNull(), // "horizontal" or "vertical"
+  bgColor: text("bg_color"), // Background color hex for public profile
+  textColor: text("text_color"), // Text color hex for public profile
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

@@ -23,6 +23,8 @@ export async function GET() {
       showProducts: true,
       showIntegrations: true,
       linksLayout: "horizontal",
+      bgColor: null,
+      textColor: null,
     });
   }
 
@@ -32,6 +34,8 @@ export async function GET() {
     showProducts: settings.showProducts,
     showIntegrations: settings.showIntegrations,
     linksLayout: settings.linksLayout,
+    bgColor: settings.bgColor,
+    textColor: settings.textColor,
   });
 }
 
@@ -43,7 +47,7 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const { showLinks, showBlogs, showProducts, showIntegrations, linksLayout } = body;
+  const { showLinks, showBlogs, showProducts, showIntegrations, linksLayout, bgColor, textColor } = body;
 
   // Upsert settings
   const existing = await db.query.userSettings.findFirst({
@@ -59,6 +63,8 @@ export async function PATCH(request: Request) {
         showProducts: showProducts ?? existing.showProducts,
         showIntegrations: showIntegrations ?? existing.showIntegrations,
         linksLayout: linksLayout ?? existing.linksLayout,
+        bgColor: bgColor !== undefined ? bgColor : existing.bgColor,
+        textColor: textColor !== undefined ? textColor : existing.textColor,
         updatedAt: new Date(),
       })
       .where(eq(userSettings.userId, user.id));
@@ -70,6 +76,8 @@ export async function PATCH(request: Request) {
       showProducts: showProducts ?? true,
       showIntegrations: showIntegrations ?? true,
       linksLayout: linksLayout ?? "horizontal",
+      bgColor: bgColor ?? null,
+      textColor: textColor ?? null,
     });
   }
 

@@ -29,17 +29,23 @@ type Props = {
 };
 
 export function ColorPicker({ isOpen, onClose }: Props) {
-  const [colors, setColors] = useState<ColorConfig>({ bg: "#ffffff", text: "#0a0a0a" });
+  const [colors, setColors] = useState<ColorConfig>({ bg: "#ffffff", text: "#1a1a1a" });
+  const [isSaving, setIsSaving] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // Load saved colors on mount
+  // Load saved colors from API on mount
   useEffect(() => {
-    const saved = localStorage.getItem("sproink-colors");
-    if (saved) {
-      const parsed = JSON.parse(saved) as ColorConfig;
-      setColors(parsed);
-      applyColors(parsed);
-    }
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.bgColor || data.textColor) {
+          setColors({
+            bg: data.bgColor || "#ffffff",
+            text: data.textColor || "#1a1a1a",
+          });
+        }
+      })
+      .catch(console.error);
   }, []);
 
   // Click outside to close
@@ -58,13 +64,6 @@ export function ColorPicker({ isOpen, onClose }: Props) {
     };
   }, [isOpen, onClose]);
 
-  const applyColors = (cfg: ColorConfig) => {
-    document.documentElement.style.setProperty("--background", cfg.bg);
-    document.documentElement.style.setProperty("--foreground", cfg.text);
-    document.documentElement.style.setProperty("--card", cfg.bg);
-    document.documentElement.style.setProperty("--card-foreground", cfg.text);
-  };
-
   // Check if a color is "dark" based on luminance
   const isDark = (hex: string) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -79,6 +78,24 @@ export function ColorPicker({ isOpen, onClose }: Props) {
     return isDark(c1) === isDark(c2);
   };
 
+  const saveColors = async (newColors: ColorConfig) => {
+    setIsSaving(true);
+    try {
+      await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bgColor: newColors.bg,
+          textColor: newColors.text,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to save colors:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleChange = (type: "bg" | "text", value: string) => {
     let newColors = { ...colors, [type]: value };
 
@@ -86,16 +103,15 @@ export function ColorPicker({ isOpen, onClose }: Props) {
     if (areTooSimilar(newColors.bg, newColors.text)) {
       if (type === "bg") {
         // User changed background, so fix text
-        newColors.text = isDark(value) ? "#fafafa" : "#0a0a0a";
+        newColors.text = isDark(value) ? "#fafafa" : "#1a1a1a";
       } else {
         // User changed text, so fix background
-        newColors.bg = isDark(value) ? "#ffffff" : "#0a0a0a";
+        newColors.bg = isDark(value) ? "#ffffff" : "#1a1a1a";
       }
     }
 
     setColors(newColors);
-    applyColors(newColors);
-    localStorage.setItem("sproink-colors", JSON.stringify(newColors));
+    saveColors(newColors);
   };
 
   if (!isOpen) return null;
@@ -106,6 +122,8 @@ export function ColorPicker({ isOpen, onClose }: Props) {
       className="absolute top-8 right-0 z-50 p-4 border border-border bg-background shadow-lg animate-in fade-in slide-in-from-top-1 duration-200 min-w-[200px]"
     >
       <div className="flex flex-col gap-4">
+        <span className="text-[10px] mono text-muted-foreground">public profile colors</span>
+        
         {/* Background Colors */}
         <div className="flex flex-col gap-2">
           <span className="text-[10px] mono text-muted-foreground">background</span>
@@ -145,7 +163,13 @@ export function ColorPicker({ isOpen, onClose }: Props) {
             ))}
           </div>
         </div>
+
+        {/* Status indicator */}
+        {isSaving && (
+          <span className="text-[10px] mono text-muted-foreground">saving...</span>
+        )}
       </div>
     </div>
   );
 }
+

@@ -79,6 +79,8 @@ export default async function PublicProfilePage({ params }: Props) {
   const showBlogs = settings?.showBlogs ?? true;
   const showProducts = settings?.showProducts ?? true;
   const linksLayout = settings?.linksLayout ?? "horizontal";
+  const bgColor = settings?.bgColor ?? null;
+  const textColor = settings?.textColor ?? null;
 
   // Fetch content based on settings
   const [userLinks, userBlogs, userProducts] = await Promise.all([
@@ -102,8 +104,20 @@ export default async function PublicProfilePage({ params }: Props) {
       : [],
   ]);
 
+  // Build custom style object for colors
+  const customStyle: React.CSSProperties = {};
+  if (bgColor) {
+    customStyle.backgroundColor = bgColor;
+  }
+  if (textColor) {
+    customStyle.color = textColor;
+  }
+
   return (
-    <div className="w-full min-h-screen flex justify-center px-6 py-16 relative">
+    <div 
+      className="w-full min-h-screen flex justify-center px-6 py-16 relative"
+      style={customStyle}
+    >
       {/* Promo Banner */}
       <a 
         href="https://plob.dev/signup"
