@@ -1,5 +1,6 @@
 "use client";
 import { FeatureConfig, LinksLayout, ToggleBar } from "./_components/toggle-bar";
+import { DashboardSkeleton } from "./_components/dashboard-skeleton";
 import { useState, useEffect } from "react";
 
 type LinkItem = {
@@ -45,48 +46,57 @@ export default function MyPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [user, setUser] = useState<UserInfo | null>(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   // Fetch settings and data on mount
   useEffect(() => {
-    // Fetch user info
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.username) {
-          setUser({ username: data.username, bio: data.bio || null });
-        }
-      })
-      .catch(console.error);
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          // Fetch user info
+          fetch("/api/auth/me")
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.username) {
+                setUser({ username: data.username, bio: data.bio || null });
+              }
+            }),
 
-    // Fetch visibility settings
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        setFeatures({
-          links: data.showLinks ?? true,
-          blogs: data.showBlogs ?? true,
-          products: data.showProducts ?? true,
-          integrations: data.showIntegrations ?? true,
-        });
-        setLinksLayout(data.linksLayout ?? "horizontal");
-        setSettingsLoaded(true);
-      })
-      .catch(console.error);
+          // Fetch visibility settings
+          fetch("/api/settings")
+            .then((res) => res.json())
+            .then((data) => {
+              setFeatures({
+                links: data.showLinks ?? true,
+                blogs: data.showBlogs ?? true,
+                products: data.showProducts ?? true,
+                integrations: data.showIntegrations ?? true,
+              });
+              setLinksLayout(data.linksLayout ?? "horizontal");
+              setSettingsLoaded(true);
+            }),
 
-    // Fetch content
-    fetch("/api/links")
-      .then((res) => res.json())
-      .then((data) => setLinks(data))
-      .catch(console.error);
+          // Fetch content
+          fetch("/api/links")
+            .then((res) => res.json())
+            .then((data) => setLinks(data)),
 
-    fetch("/api/products")
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch(console.error);
+          fetch("/api/products")
+            .then((res) => res.json())
+            .then((data) => setProducts(data)),
 
-    fetch("/api/blogs")
-      .then((res) => res.json())
-      .then((data) => setBlogs(data))
-      .catch(console.error);
+          fetch("/api/blogs")
+            .then((res) => res.json())
+            .then((data) => setBlogs(data)),
+        ]);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // Save settings when features change (but not on initial load)
@@ -129,6 +139,10 @@ export default function MyPage() {
   const publishedBlogs = blogs.filter((b) => b.published);
 
   const username = user?.username || "...";
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="w-full min-h-screen flex justify-center px-6 pt-24 pb-16 md:py-16">
