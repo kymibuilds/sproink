@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, ChevronDown, ChevronRight, Keyboard } from "lucide-react";
+import { Menu, X, Keyboard } from "lucide-react";
 
 type NavItemProps = { 
   href: string; 
@@ -28,53 +28,44 @@ function NavItem({ href, label, shortcut, onClick }: NavItemProps) {
   );
 }
 
-function ShortcutsAccordion() {
-  const [isOpen, setIsOpen] = useState(false);
+function ShortcutsList() {
   const pathname = usePathname();
 
   const isListPage = pathname === "/links" || pathname === "/blogs";
 
-  const shortcuts = isListPage ? [
-    { key: "a", label: "new" },
-    { key: "e", label: "edit" },
-    { key: "d", label: "delete" },
-    { key: "j/k", label: "navigate" },
-    { key: "↵", label: "select" },
+  const shortcuts = [
+    // Page specific actions
+    ...(isListPage ? [
+      { key: "a", label: "new" },
+      { key: "e", label: "edit" },
+      { key: "d", label: "delete" },
+      { key: "j/k", label: "navigate" },
+      { key: "↵", label: "select" },
+    ] : []),
+    // General navigation
+    { key: "g h", label: "home" },
+    { key: "g l", label: "links" },
+    { key: "g b", label: "blogs" },
+    { key: "g a", label: "analytics" },
     { key: "?", label: "help" },
-  ] : [
-    { key: "?", label: "help" },
-    { key: "g +", label: "nav" },
   ];
 
   return (
-    <div className="flex flex-col gap-1">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between group py-2 px-2 hover:bg-muted/50 rounded-sm transition-colors w-full"
-      >
-        <span className="flex items-center gap-2 text-sm font-medium group-hover:underline">
-          <Keyboard className="w-4 h-4 text-muted-foreground" />
-          <span>shortcuts</span>
-        </span>
-        {isOpen ? (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        )}
-      </button>
-
-      {isOpen && (
-        <div className="flex flex-col gap-2 pl-4 pr-1 py-1 text-xs text-muted-foreground animate-in slide-in-from-top-1 duration-200">
-          {shortcuts.map((s) => (
-            <div key={s.key} className="flex items-center justify-between">
-              <span>{s.label}</span>
-              <span className="mono bg-muted/60 px-1.5 py-0.5 rounded text-[10px] min-w-[1.5rem] text-center border border-border/50">
-                {s.key}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border/50">
+      <div className="flex items-center gap-2 mb-1 px-2">
+        <Keyboard className="w-4 h-4 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground font-medium">shortcuts</span>
+      </div>
+      <div className="flex flex-col gap-1.5 px-3">
+        {shortcuts.map((s) => (
+          <div key={s.key} className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{s.label}</span>
+            <span className="mono bg-muted/60 px-1.5 py-0.5 rounded text-[10px] min-w-[1.5rem] text-center border border-border/50">
+              {s.key}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -160,7 +151,7 @@ export function MobileNav() {
             <DisabledNavItem label="products" />
             <DisabledNavItem label="sponsors" />
             <DisabledNavItem label="integrations" />
-            <ShortcutsAccordion />
+            <ShortcutsList />
           </nav>
 
           {/* Footer */}
