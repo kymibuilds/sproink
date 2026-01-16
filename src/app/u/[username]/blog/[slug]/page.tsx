@@ -74,12 +74,14 @@ export default function UserBlogPage() {
   return (
     <main 
       className={`min-h-screen w-full transition-colors duration-500 ease-in-out ${
-        isReadingMode ? "bg-[#111111]" : "bg-background"
+        isReadingMode ? "bg-[#111111] [&_code]:text-[#e5e5e5] [&_code]:font-mono" : "bg-background"
       }`}
       style={isReadingMode ? {
         // @ts-ignore
         "--foreground": "#d4d4d4",
-        "--muted-foreground": "#888888"
+        "--muted-foreground": "#888888",
+        "--muted": "#222222",
+        "--border": "#333333",
       } : undefined}
     >
       {/* Main Content Container with Borders */}
