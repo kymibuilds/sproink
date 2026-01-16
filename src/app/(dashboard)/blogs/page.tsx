@@ -34,26 +34,50 @@ export default function BlogsPage() {
   const formRef = useRef<HTMLDivElement>(null);
   const { registerAction, unregisterAction } = useKeyboard();
 
-  // Register keyboard actions
+  // State ref for stable access
+  const stateRef = useRef({
+    blogs, 
+    focusedIndex, 
+    pendingDeleteId,
+    editingBlog
+  });
+
+  useEffect(() => {
+    stateRef.current = { blogs, focusedIndex, pendingDeleteId, editingBlog };
+  }, [blogs, focusedIndex, pendingDeleteId, editingBlog]);
+
+  // Handlers ref for stable access
+  const handlersRef = useRef({ 
+    handleDelete: (id: string) => {},
+    handleAddStart: (mode: "post" | "link") => {},
+    handleSetPublish: (id: string, pub: boolean) => {}
+  });
+
+  // Register keyboard actions - ONCE
   useEffect(() => {
     registerAction("down", () => {
-      if (pendingDeleteId) return; // Ignore during delete confirmation
-      setFocusedIndex((i) => Math.min(i + 1, blogs.length - 1));
+      const { pendingDeleteId, blogs, focusedIndex } = stateRef.current;
+      if (pendingDeleteId) return; 
+      setFocusedIndex(Math.min(focusedIndex + 1, blogs.length - 1));
     });
     registerAction("up", () => {
+      const { pendingDeleteId, focusedIndex } = stateRef.current;
       if (pendingDeleteId) return;
-      setFocusedIndex((i) => Math.max(i - 1, 0));
+      setFocusedIndex(Math.max(focusedIndex - 1, 0));
     });
     registerAction("new", () => {
+      const { pendingDeleteId } = stateRef.current;
       if (pendingDeleteId) return;
-      handleAddStart("post");
+      handlersRef.current.handleAddStart("post");
     });
     registerAction("edit", () => {
+      const { pendingDeleteId, blogs, focusedIndex } = stateRef.current;
       if (pendingDeleteId) return;
       const blog = blogs[focusedIndex];
       if (blog && !blog.isExternal) setEditingBlog(blog);
     });
     registerAction("delete", () => {
+      const { pendingDeleteId, blogs, focusedIndex } = stateRef.current;
       if (pendingDeleteId) return;
       const blog = blogs[focusedIndex];
       if (blog) {
@@ -61,6 +85,7 @@ export default function BlogsPage() {
       }
     });
     registerAction("select", () => {
+      const { pendingDeleteId, blogs, focusedIndex } = stateRef.current;
       if (pendingDeleteId) return;
       const blog = blogs[focusedIndex];
       if (blog && !blog.isExternal) setEditingBlog(blog);
@@ -74,16 +99,16 @@ export default function BlogsPage() {
       setNewExternalUrl("");
     });
     registerAction("p", () => {
+      const { pendingDeleteId, blogs, focusedIndex } = stateRef.current;
       if (pendingDeleteId) return;
       const blog = blogs[focusedIndex];
-      // Only execute if not already published
-      if (blog && !blog.published) handleSetPublish(blog.id, true);
+      if (blog && !blog.published) handlersRef.current.handleSetPublish(blog.id, true);
     });
     registerAction("u", () => {
+      const { pendingDeleteId, blogs, focusedIndex } = stateRef.current;
       if (pendingDeleteId) return;
       const blog = blogs[focusedIndex];
-      // Only execute if already published
-      if (blog && blog.published) handleSetPublish(blog.id, false);
+      if (blog && blog.published) handlersRef.current.handleSetPublish(blog.id, false);
     });
 
     return () => {
@@ -97,7 +122,7 @@ export default function BlogsPage() {
       unregisterAction("p");
       unregisterAction("u");
     };
-  }, [blogs, focusedIndex, pendingDeleteId, registerAction, unregisterAction]);
+  }, [registerAction, unregisterAction]);
 
 
   // Handle y/n for delete confirmation
@@ -182,10 +207,6 @@ export default function BlogsPage() {
     if (addMode === "post" && !newSlug) return;
     if (addMode === "link" && !newExternalUrl) return;
 
-    // For links, generate a dummy slug if needed, or backend can handle it.
-    // We'll use a random slug for links to satisfy the constraint if needed, 
-    // or the backend logic we just wrote requires slug. 
-    // Let's generate a slug for links too for consistency in the DB.
     const effectiveSlug = addMode === "link" 
       ? `link-${crypto.randomUUID().slice(0, 8)}` 
       : newSlug;
@@ -205,7 +226,7 @@ export default function BlogsPage() {
 
       if (res.ok) {
         const newBlog = await res.json();
-        setBlogs([newBlog, ...blogs]);
+        setBlogs(prev => [newBlog, ...prev]);
         setIsAdding(false);
         resetForm();
       }
@@ -218,7 +239,7 @@ export default function BlogsPage() {
     try {
       const res = await fetch(`/api/blogs/${id}`, { method: "DELETE" });
       if (res.ok) {
-        setBlogs(blogs.filter((b) => b.id !== id));
+        setBlogs(prev => prev.filter((b) => b.id !== id));
       }
     } catch (error) {
       console.error("Failed to delete blog:", error);
@@ -260,12 +281,17 @@ export default function BlogsPage() {
 
       if (res.ok) {
         const updated = await res.json();
-        setBlogs(blogs.map((b) => (b.id === id ? updated : b)));
+        setBlogs(prev => prev.map((b) => (b.id === id ? updated : b)));
       }
     } catch (error) {
       console.error("Failed to update blog:", error);
     }
   };
+  
+  // Update handlers ref
+  useEffect(() => {
+    handlersRef.current = { handleDelete, handleAddStart, handleSetPublish };
+  });
 
   const handleTogglePublish = (id: string, currentPublished: boolean) => {
     handleSetPublish(id, !currentPublished);

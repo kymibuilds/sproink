@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Keyboard } from "lucide-react";
 
@@ -20,13 +20,20 @@ function NavItem({ href, label, shortcut }: { href: string; label: string; short
 
 function ShortcutsAccordion() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
-  const shortcuts = [
+  const isListPage = pathname === "/links" || pathname === "/blogs";
+
+  const shortcuts = isListPage ? [
     { key: "a", label: "new" },
     { key: "e", label: "edit" },
+    { key: "d", label: "delete" },
     { key: "j/k", label: "navigate" },
-    { key: "↵", label: "expand" },
+    { key: "↵", label: "select" },
     { key: "?", label: "help" },
+  ] : [
+    { key: "?", label: "help" },
+    { key: "g +", label: "nav" },
   ];
 
   return (

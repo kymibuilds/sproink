@@ -23,21 +23,37 @@ export default function LinksPage() {
   const formRef = useRef<HTMLDivElement>(null);
   const { registerAction, unregisterAction } = useKeyboard();
 
-  // Register keyboard actions
+  // Refs for stable access in shortcuts
+  const stateRef = useRef({
+    links,
+    focusedIndex,
+    editingId,
+    isAdding
+  });
+
+  useEffect(() => {
+    stateRef.current = { links, focusedIndex, editingId, isAdding };
+  }, [links, focusedIndex, editingId, isAdding]);
+
+  // Register keyboard actions - ONCE on mount
   useEffect(() => {
     registerAction("down", () => {
+      const { editingId, links, focusedIndex } = stateRef.current;
       if (editingId) return;
-      setFocusedIndex((i) => Math.min(i + 1, links.length - 1));
+      setFocusedIndex(Math.min(focusedIndex + 1, links.length - 1));
     });
     registerAction("up", () => {
+      const { editingId, focusedIndex } = stateRef.current;
       if (editingId) return;
-      setFocusedIndex((i) => Math.max(i - 1, 0));
+      setFocusedIndex(Math.max(focusedIndex - 1, 0));
     });
     registerAction("new", () => {
+      const { editingId } = stateRef.current;
       if (editingId) return;
       setIsAdding(true);
     });
     registerAction("edit", () => {
+      const { editingId, links, focusedIndex } = stateRef.current;
       if (editingId) return;
       const link = links[focusedIndex];
       if (link) {
@@ -47,6 +63,7 @@ export default function LinksPage() {
       }
     });
     registerAction("select", () => {
+      const { editingId, links, focusedIndex } = stateRef.current;
       if (editingId) return;
       const link = links[focusedIndex];
       if (link) {
@@ -56,9 +73,20 @@ export default function LinksPage() {
       }
     });
     registerAction("delete", () => {
+      const { editingId, links, focusedIndex } = stateRef.current;
       if (editingId) return;
       const link = links[focusedIndex];
-      if (link && window.confirm(`Delete "${link.name}"?`)) handleDelete(link.id);
+      // Note: We need to pass the ID to delete, but handleDelete isn't stable either if not memoized.
+      // However, since we are calling it from here, we can just access the current link and call the function.
+      // We'll wrap handleDelete in a ref or just rely on the closure if we weren't unmounting/remounting.
+      // But we ARE running this effect once. So we need a stable way to call things.
+      // Easiest is to put handlers in a ref too or just use the stateRef pattern for data.
+      if (link && window.confirm(`Delete "${link.name}"?`)) {
+        // We'll dispatch a custom event or just call a stable method relative to this scope?
+        // Actually, we can't easily call 'handleDelete' from here if it's not stable.
+        // Let's make a stable ref for handlers.
+        handlersRef.current.handleDelete(link.id);
+      }
     });
     registerAction("cancel", () => {
       setIsAdding(false);
@@ -76,9 +104,26 @@ export default function LinksPage() {
       unregisterAction("delete");
       unregisterAction("cancel");
     };
-  }, [links, focusedIndex, editingId, registerAction, unregisterAction]);
+  }, [registerAction, unregisterAction]);
 
+  // Stable handlers ref
+  const handlersRef = useRef({ handleDelete: (id: string) => {} });
+  
+  // Forward declare handleDelete for the ref
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setLinks(prev => prev.filter((link) => link.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete link:", error);
+    }
+  };
 
+  useEffect(() => {
+    handlersRef.current = { handleDelete };
+  });
 
   // Fetch links on mount
   useEffect(() => {
@@ -130,7 +175,7 @@ export default function LinksPage() {
 
       if (res.ok) {
         const newLink = await res.json();
-        setLinks([newLink, ...links]);
+        setLinks(prev => [newLink, ...prev]);
         setIsAdding(false);
         setNewName("");
         setNewUrl("");
@@ -140,16 +185,7 @@ export default function LinksPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setLinks(links.filter((link) => link.id !== id));
-      }
-    } catch (error) {
-      console.error("Failed to delete link:", error);
-    }
-  };
+  // handleDelete is defined above now
 
   const handleEdit = async () => {
     if (!editingId || !editName || !editUrl) return;
