@@ -18,6 +18,9 @@ export default function LinksPage() {
   const [newUrl, setNewUrl] = useState("");
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editUrl, setEditUrl] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
   const { registerAction, unregisterAction } = useKeyboard();
 
